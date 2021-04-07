@@ -14,21 +14,26 @@
 #include "instructions.hpp"
 #include "memory.hpp"
 #include "cpu.hpp"
+#include "program.hpp"
 
 int main(int argc, char **argv) {
-  CPU cpu;
+  /* CPU cpu; */
 
-  cpu.regs[0] = 0b1111'0000'0000'0000'0111'1111'1100'0000;
-  cpu.regs[1] = 0b1111'0000'0000'0000'0111'1111'1100'0000;
-  cpu.regs[2] = 0b1111'0000'0000'0000'0111'1111'1100'0000;
+  /* cpu.regs[0] = 0b1111'0000'0000'0000'0111'1111'1100'0000; */
+  /* cpu.regs[1] = 0b1111'0000'0000'0000'0111'1111'1100'0000; */
+  /* cpu.regs[2] = 0b1111'0000'0000'0000'0111'1111'1100'0000; */
 
-  cpu.pc = 0;
+  /* cpu.pc = 0; */
 
-  cpu.mem[0] = -1;
-  cpu.mem[1] = -2;
-  cpu.mem[2] = -3;
+  /* cpu.mem[0] = -1; */
+  /* cpu.mem[1] = -2; */
+  /* cpu.mem[2] = -3; */
 
-  cpu.print();
+  /* cpu.print(); */
+
+  Word w = Word(-1);
+
+  print_bits(w[{0, 7}]);
 
   // testing
   /* word add_instr  = 0x003100b3; */

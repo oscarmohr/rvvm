@@ -1,10 +1,14 @@
 using word = uint32_t;
 using byte = uint8_t;
 
+// get bits w[u:l] as least significant digits
 inline auto get_slice(word w, int l, int u) { return (w << (31 - u)) >> (31 - u + l); }
 
+// might start using Word structure to encapsulate words with slice access
 struct Word {
   word w;
+
+  Word(word _w) { w = _w; }
   
   auto operator[](byte i) {
   }
@@ -25,13 +29,11 @@ auto die(std::string s, T t) {
   std::cout << s << t; exit(EXIT_FAILURE);
 }
 
-auto new_line() { std::cout << '\n'; }
-
 template <typename T>
 inline auto print(T a) { std::cout << a << '\n'; }
 
 template <typename T>
-inline auto put  (T a) { std::cout << a;         }
+inline auto put(T a) { std::cout << a; }
 
 // returns word with bits w[u:l] ones and zeroes else
 inline auto slice_mask(int l, int u) {
@@ -49,10 +51,6 @@ inline auto set_slice(word& w, word v, int l, int u) {
 
 inline auto set_bits(word& w, int l, int u) { w |= slice_mask(l, u); }
 
-// get bits w[u:l] as least significant digits
-// alternatively: return (w & slice_mask(l, u)) >> l; */ }
-/* inline auto get_slice(word w, int l, int u) { return (w << (31 - u)) >> (31 - u + l); } */
-
 inline auto print_bits(byte w) {
   std::cout << "0b";
   std::cout << '\'' << std::bitset<8>(w);
@@ -61,6 +59,7 @@ inline auto print_bits(byte w) {
 
 inline auto print_bits(word w) {
   std::cout << "0b";
+  // print 8 apostroph-seperated nibbles
   for (int i = 7; i >= 0; i--)
     std::cout << '\'' << std::bitset<4>(get_slice(w, i*4 , i*4 + 3));
   std::cout << '\n';
