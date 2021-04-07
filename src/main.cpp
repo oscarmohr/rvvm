@@ -14,7 +14,7 @@
 #include "instructions.hpp"
 #include "memory.hpp"
 #include "cpu.hpp"
-#include "interpreter.hpp"
+/* #include "interpreter.hpp" */
 
 int main(int argc, char **argv) {
   CPU cpu;
@@ -30,7 +30,9 @@ int main(int argc, char **argv) {
   cpu.mem[2] = -3;
 
   cpu.print();
+  cpu.print();
 
+  // testing
   /* word add_instr  = 0x003100b3; */
   /* word sub_instr  = 0x403100b3; */
   /* word sll_instr  = 0x003110b3; */

@@ -14,10 +14,16 @@ struct Word {
 
 };
 
-// premature program exit
-auto die(std::string s)         { std::cout << s;      exit(EXIT_FAILURE); }
+// premature program exit strategy will soon not halt machine
+auto die(std::string s) {
+  std::cout << s;
+  exit(EXIT_FAILURE);
+}
+
 template<typename T>
-auto die(std::string s, T t) { std::cout << s << t; exit(EXIT_FAILURE); }
+auto die(std::string s, T t) {
+  std::cout << s << t; exit(EXIT_FAILURE);
+}
 
 auto new_line() { std::cout << '\n'; }
 

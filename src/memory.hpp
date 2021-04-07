@@ -1,6 +1,8 @@
+// register file
 struct Registers {
   std::array<word, 32> x {0};
 
+  // overloading "at" operator to catch malformed indices at runtime
   auto& operator[](word i) {
     if (i >= 32) die("Bad Register Index: ", i);
     return x[i];
@@ -19,15 +21,11 @@ struct Registers {
 };
 
 struct Memory {
+  // hashmap allows truly random access compared to allocating huge memory array
   std::map<word, byte> mem;
 
+  // get structure member "mem" map elements directly
   auto& operator[](word i) { return mem[i]; }
-
-  auto get(word i) { return operator[](i); }
-
-  auto set(word i, word value) {
-    mem[i] = value;
-  }
 
   auto get_word(word i) {
     // little endian
