@@ -14,7 +14,6 @@
 #include "instructions.hpp"
 #include "memory.hpp"
 #include "cpu.hpp"
-/* #include "interpreter.hpp" */
 
 int main(int argc, char **argv) {
   CPU cpu;
@@ -29,7 +28,6 @@ int main(int argc, char **argv) {
   cpu.mem[1] = -2;
   cpu.mem[2] = -3;
 
-  cpu.print();
   cpu.print();
 
   // testing

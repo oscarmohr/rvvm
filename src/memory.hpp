@@ -2,12 +2,13 @@
 struct Registers {
   std::array<word, 32> x {0};
 
-  // overloading "at" operator to catch malformed indices at runtime
+  // get member "x" elements directly and catch malformed indices at runtime
   auto& operator[](word i) {
     if (i >= 32) die("Bad Register Index: ", i);
     return x[i];
   }
 
+  // print register files first w registers
   auto print(word w) {
     std::cout << "==================== registers> ====================" << '\n';
 
@@ -27,8 +28,8 @@ struct Memory {
   // get structure member "mem" map elements directly
   auto& operator[](word i) { return mem[i]; }
 
+  // get little endian 4 byte word mem[i+3]:mem[i+2]:mem[i+1]:mem[i]
   auto get_word(word i) {
-    // little endian
     word byte0 = mem[i + 0] << 24;
     word byte1 = mem[i + 1] << 16;
     word byte2 = mem[i + 2] <<  8;
@@ -41,6 +42,7 @@ struct Memory {
     mem[memcell] = (memcell ? value : 0);
   }
 
+  // print memory state
   auto print() {
     std::cout << "==================== memory>    ====================" << '\n';
 

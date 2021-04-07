@@ -53,6 +53,12 @@ inline auto set_bits(word& w, int l, int u) { w |= slice_mask(l, u); }
 // alternatively: return (w & slice_mask(l, u)) >> l; */ }
 /* inline auto get_slice(word w, int l, int u) { return (w << (31 - u)) >> (31 - u + l); } */
 
+inline auto print_bits(byte w) {
+  std::cout << "0b";
+  std::cout << '\'' << std::bitset<8>(w);
+  std::cout << '\n';
+}
+
 inline auto print_bits(word w) {
   std::cout << "0b";
   for (int i = 7; i >= 0; i--)
