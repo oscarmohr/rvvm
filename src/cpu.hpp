@@ -3,207 +3,191 @@ struct CPU {
   Registers regs;
   Memory    mem;
 
-  auto exec(word w) {
-    switch (get_operation(w)) {
-      case  LUI:
+  auto exec(Instruction w) {
+    switch (w.operation) {
+      case LUI:
         break;
 
-      case  AUIPC:
+      case AUIPC:
         break;
 
-      case  JAL:
+      case JAL:
         break;
 
-      case  JALR:
+      case JALR:
         break;
 
-      case  BEQ:
+      case BEQ:
         break;
 
-      case  BNE:
+      case BNE:
         break;
 
-      case  BLT:
+      case BLT:
         break;
 
-      case  BGE:
+      case BGE:
         break;
 
-      case  BLTU:
+      case BLTU:
         break;
 
-      case  BGEU:
+      case BGEU:
         break;
 
-      case  LB:
-        word base   = get_reg(get_rs1(w));
-        word offset = get_typeI_imm(w);
-        word addr   = base + offset;
-        word dest   = get_rd(w);
-        word src    = get_mem(addr);
-        // sign extend src
-        /* src & (1 << 31) ? 1:0; */
-        set_reg(dest, src);
+      case LB:
+        /* word base   = get_reg(get_rs1(w)); */
+        /* word offset = get_typeI_imm(w); */
+        /* word addr   = base + offset; */
+        /* word dest   = get_rd(w); */
+        /* word src    = get_mem(addr); */
+        /* // sign extend src */
+        /* /1* src & (1 << 31) ? 1:0; *1/ */
+        /* set_reg(dest, src); */
         break;
 
-      case  LH:
+      case LH:
         break;
 
-      case  LW:
+      case LW:
         break;
 
-      case  LBU:
+      case LBU:
         break;
 
-      case  LHU:
+      case LHU:
         break;
 
-      case  SB:
-        word base   = get_reg(get_rs1(w));
-        word offset = get_typeS_imm(w);
-        word dest   = base + offset;
-        word value  = get_slice(get_reg(get_rs2(w)), 0, 7); // get byte
-        set_mem(dest, value);
+      case SB:
+        /* word base   = get_reg(get_rs1(w)); */
+        /* word offset = get_typeS_imm(w); */
+        /* word dest   = base + offset; */
+        /* word value  = get_slice(get_reg(get_rs2(w)), 0, 7); // get byte */
+        /* set_mem(dest, value); */
         break;
 
-      case  SH:
-        word base   = get_reg(get_rs1(w));
-        word offset = get_typeS_imm(w);
-        word dest   = base + offset;
-        word value  = get_slice(get_reg(get_rs2(w)), 0, 15); // get hword
-        set_mem(dest, value);
+      case SH:
+        /* word base   = get_reg(get_rs1(w)); */
+        /* word offset = get_typeS_imm(w); */
+        /* word dest   = base + offset; */
+        /* word value  = get_slice(get_reg(get_rs2(w)), 0, 15); // get hword */
+        /* set_mem(dest, value); */
         break;
 
-      case  SW:
-        word base = get_reg(get_rs1(w));
-        word offset = get_typeS_imm(w);
-        word dest = base + offset;
-        word value = get_reg(get_rs2(w)); // get word
-        set_mem(dest, value);
+      case SW:
+        /* word base = get_reg(get_rs1(w)); */
+        /* word offset = get_typeS_imm(w); */
+        /* word dest = base + offset; */
+        /* word value = get_reg(get_rs2(w)); // get word */
+        /* set_mem(dest, value); */
         break;
 
-      case  ADDI:
+      case ADDI:
         break;
 
-      case  SLTI:
+      case SLTI:
         break;
 
-      case  SLTIU:
+      case SLTIU:
         break;
 
-      case  XORI:
+      case XORI:
         break;
 
-      case  ORI:
+      case ORI:
         break;
 
-      case  ANDI:
+      case ANDI:
         break;
 
-      case  SLLI:
+      case SLLI:
         break;
 
-      case  SRLI:
+      case SRLI:
         break;
 
-      case  SRAI:
+      case SRAI:
         break;
 
-      case  ADD:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 + op2;
-        set_reg(dest, res);
+      case ADD:
+        // x[w.rd] = x[w.rs1] + x[w.rs2];
         break;
 
-      case  SUB:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 - op2;
-        set_reg(dest, res);
+      case SUB:
+        // x[w.rd] = x[w.rs1] - x[w.rs2];
         break;
 
-      case  SLL:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_slice(get_reg(get_rs2(w)), 0, 4);
-        word res  = op1 << op2;
-        set_reg(dest, res);
+      case SLL:
+        // x[w.rd] = x[w.rs1] << x[w.rs2](0, 4);
         break;
 
-      case  SLT:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = (signed) op1 < (signed) op2 ? 1 : 0;
-        set_reg(dest, res);
+      case SLT:
+        // x[w.rd] = (signed) x[w.rs1] < (signed) x[w.rs2] ? 1 : 0;
         break;
 
-      case  SLTU:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 < op2 ? 1 : 0;
-        set_reg(dest, res);
+      case SLTU:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_reg(get_rs2(w)); */
+        /* word res  = op1 < op2 ? 1 : 0; */
+        /* set_reg(dest, res); */
         break;
 
-      case  XOR:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 ^ op2;
-        set_reg(dest, res);
+      case XOR:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_reg(get_rs2(w)); */
+        /* word res  = op1 ^ op2; */
+        /* set_reg(dest, res); */
         break;
 
-      case  SRL:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_slice(get_reg(get_rs2(w)), 0, 4);
-        word res  = op1 >> op2;
-        set_reg(dest, res);
+      case SRL:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_slice(get_reg(get_rs2(w)), 0, 4); */
+        /* word res  = op1 >> op2; */
+        /* set_reg(dest, res); */
         break;
 
-      case  SRA:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_slice(get_reg(get_rs2(w)), 0, 4);
-        word res  = op1 >> op2;
-        if (op1 & (1 << 31))
-        res |= (1 << 31);
-        set_reg(dest, res);
+      case SRA:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_slice(get_reg(get_rs2(w)), 0, 4); */
+        /* word res  = op1 >> op2; */
+        /* if (op1 & (1 << 31)) */
+        /* res |= (1 << 31); */
+        /* set_reg(dest, res); */
         break;
 
-      case  OR:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 | op2;
-        set_reg(dest, res);
+      case OR:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_reg(get_rs2(w)); */
+        /* word res  = op1 | op2; */
+        /* set_reg(dest, res); */
         break;
 
-      case  AND:
-        word dest = get_rd(w);
-        word op1  = get_reg(get_rs1(w));
-        word op2  = get_reg(get_rs2(w));
-        word res  = op1 & op2;
-        set_reg(dest, res);
+      case AND:
+        /* word dest = get_rd(w); */
+        /* word op1  = get_reg(get_rs1(w)); */
+        /* word op2  = get_reg(get_rs2(w)); */
+        /* word res  = op1 & op2; */
+        /* set_reg(dest, res); */
         break;
 
-      case  FENCE:
+      case FENCE:
         break;
 
-      case  FENCE_TSO:
+      case FENCE_TSO:
         break;
 
-      case  PAUSE:
+      case PAUSE:
         break;
 
-      case  ECALL:
+      case ECALL:
         break;
 
-      case  EBREAK:
+      case EBREAK:
         break;
 
       default:
@@ -221,7 +205,5 @@ struct CPU {
     mem.print();
   }
 
-  auto run() {
-    while (true) exec(mem[pc]);
-  }
+  auto run() { while (true) exec(mem[pc]); }
 };
