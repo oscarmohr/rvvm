@@ -111,69 +111,69 @@ inline auto get_typeU_imm(word w) { return get_slice(w, 12, 31) << 12; }
 inline auto get_typeJ_imm(word w);
 
 auto get_operation(word w) {
-    switch (get_opcode(w)) {
-      case OP_LUI:     return LUI;
-      case OP_AUIPC:   return AUIPC;
-      case OP_JAL:     return JAL;
-      case OP_JALR:    return JALR;
+  switch (get_opcode(w)) {
+    case OP_LUI:     return LUI;
+    case OP_AUIPC:   return AUIPC;
+    case OP_JAL:     return JAL;
+    case OP_JALR:    return JALR;
 
-      case OP_BRANCH: 
-        switch (get_funct3(w)) {
-          case 0b000 : return BEQ;
-          case 0b001 : return BNE;
-          case 0b100 : return BLT;
-          case 0b101 : return BGE;
-          case 0b110 : return BLTU;
-          case 0b111 : return BGEU;
-          default    : return DECODE_ERR;
-        }
+    case OP_BRANCH: 
+      switch (get_funct3(w)) {
+        case 0b000 : return BEQ;
+        case 0b001 : return BNE;
+        case 0b100 : return BLT;
+        case 0b101 : return BGE;
+        case 0b110 : return BLTU;
+        case 0b111 : return BGEU;
+        default    : return DECODE_ERR;
+      }
 
-      case OP_LOAD:
-        switch (get_funct3(w)) {
-          case 0b000 : return LB;
-          case 0b001 : return LH;
-          case 0b010 : return LW;
-          case 0b100 : return LBU;
-          case 0b101 : return LHU;
-          default    : return DECODE_ERR;
-        }
+    case OP_LOAD:
+      switch (get_funct3(w)) {
+        case 0b000 : return LB;
+        case 0b001 : return LH;
+        case 0b010 : return LW;
+        case 0b100 : return LBU;
+        case 0b101 : return LHU;
+        default    : return DECODE_ERR;
+      }
 
-      case OP_STORE:
-        switch (get_funct3(w)) {
-          case 0b000 : return SB;
-          case 0b001 : return SH;
-          case 0b010 : return SW;
-          default    : return DECODE_ERR;
-        }
+    case OP_STORE:
+      switch (get_funct3(w)) {
+        case 0b000 : return SB;
+        case 0b001 : return SH;
+        case 0b010 : return SW;
+        default    : return DECODE_ERR;
+      }
 
-      case OP_IMM:
-        switch (get_funct3(w)) {
-          case 0b000 : return ADDI;
-          case 0b010 : return SLTI;
-          case 0b011 : return SLTIU;
-          case 0b100 : return XORI;
-          case 0b110 : return ORI;
-          case 0b111 : return ANDI;
-          case 0b001 : return SLLI;
-          case 0b101 : return get_funct7(w) ? SRAI : SRLI;
-          default    : return DECODE_ERR;
-        }
+    case OP_IMM:
+      switch (get_funct3(w)) {
+        case 0b000 : return ADDI;
+        case 0b010 : return SLTI;
+        case 0b011 : return SLTIU;
+        case 0b100 : return XORI;
+        case 0b110 : return ORI;
+        case 0b111 : return ANDI;
+        case 0b001 : return SLLI;
+        case 0b101 : return get_funct7(w) ? SRAI : SRLI;
+        default    : return DECODE_ERR;
+      }
 
-      case OP_OP:
-        switch (get_funct3(w)) {
-          case 0b000 : return get_funct7(w) ? SUB : ADD;
-          case 0b001 : return SLL;
-          case 0b010 : return SLT;
-          case 0b011 : return SLTU;
-          case 0b100 : return XOR;
-          case 0b101 : return get_funct7(w) ? SRA : SRL;
-          case 0b110 : return OR;
-          case 0b111 : return AND;
-          default    : return DECODE_ERR;
-        }
+    case OP_OP:
+      switch (get_funct3(w)) {
+        case 0b000 : return get_funct7(w) ? SUB : ADD;
+        case 0b001 : return SLL;
+        case 0b010 : return SLT;
+        case 0b011 : return SLTU;
+        case 0b100 : return XOR;
+        case 0b101 : return get_funct7(w) ? SRA : SRL;
+        case 0b110 : return OR;
+        case 0b111 : return AND;
+        default    : return DECODE_ERR;
+      }
 
-      case OP_MISC_MEM : return NOIMPL;
-      case OP_SYSTEM   : return get_typeI_imm(w) ? EBREAK : ECALL;
-      default          : return DECODE_ERR;
-    }
+    case OP_MISC_MEM : return NOIMPL;
+    case OP_SYSTEM   : return get_typeI_imm(w) ? EBREAK : ECALL;
+    default          : return DECODE_ERR;
   }
+}
