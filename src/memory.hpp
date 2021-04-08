@@ -28,7 +28,7 @@ struct Memory {
   // get structure member "mem" map elements directly
   auto& operator[](word i) { return mem[i]; }
 
-  // get little endian 4 byte word mem[i+3]:mem[i+2]:mem[i+1]:mem[i]
+  // get little endian 4 byte word mem[i]:mem[i+1]:mem[i+2]:mem[i+3]
   auto get_word(word i) {
     word byte0 = mem[i + 0] << 24;
     word byte1 = mem[i + 1] << 16;
