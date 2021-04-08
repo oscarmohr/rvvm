@@ -31,9 +31,14 @@ int main(int argc, char **argv) {
 
   /* cpu.print(); */
 
-  Word w = Word(-1);
+  Word W = Word(-1);
+  word w = word(-1);
 
-  print_bits(w[{0, 7}]);
+  print_bits(w);
+  print_bits(W[{0, 7}]);
+
+  print_hex(w);
+  print_hex(W[{0, 7}]);
 
   // testing
   /* word add_instr  = 0x003100b3; */

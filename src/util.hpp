@@ -35,6 +35,27 @@ inline auto print(T a) { std::cout << a << '\n'; }
 template <typename T>
 inline auto put(T a) { std::cout << a; }
 
+inline auto print_bits(byte w) {
+  std::cout << "0b";
+  std::cout << '\'' << std::bitset<8>(w);
+  std::cout << '\n';
+}
+
+inline auto print_hex(word w) {
+  std::cout << "0x"
+            << std::hex
+            << w
+            << '\n';
+}
+
+inline auto print_bits(word w) {
+  std::cout << "0b";
+  // print 8 apostroph-seperated nibbles
+  for (int i = 7; i >= 0; i--)
+    std::cout << '\'' << std::bitset<4>(get_slice(w, i*4 , i*4 + 3));
+  std::cout << '\n';
+}
+
 // returns word with bits w[u:l] ones and zeroes else
 inline auto slice_mask(int l, int u) {
   return (((word) -1) << l) >> (31 - u);
@@ -50,20 +71,6 @@ inline auto set_slice(word& w, word v, int l, int u) {
 }
 
 inline auto set_bits(word& w, int l, int u) { w |= slice_mask(l, u); }
-
-inline auto print_bits(byte w) {
-  std::cout << "0b";
-  std::cout << '\'' << std::bitset<8>(w);
-  std::cout << '\n';
-}
-
-inline auto print_bits(word w) {
-  std::cout << "0b";
-  // print 8 apostroph-seperated nibbles
-  for (int i = 7; i >= 0; i--)
-    std::cout << '\'' << std::bitset<4>(get_slice(w, i*4 , i*4 + 3));
-  std::cout << '\n';
-}
 
 inline auto bit_at(word w, int pos) { return get_slice(w, pos, pos); }
 
