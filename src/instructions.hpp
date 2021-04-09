@@ -167,6 +167,8 @@ struct Instruction {
   word rs1;
   word rs2;
   word imm;
+  word funct3;
+  word funct7;
   Operation operation;
 
   Instruction(word w) {

@@ -30,16 +30,28 @@ struct Memory {
 
   // get little endian 4 byte word mem[i]:mem[i+1]:mem[i+2]:mem[i+3]
   auto get_word(word i) {
-    word byte3 = mem[i + 0] << 24;
-    word byte2 = mem[i + 1] << 16;
-    word byte1 = mem[i + 2] <<  8;
-    word byte0 = mem[i + 3] <<  0;
-    return byte3 & byte2 & byte1 & byte0;
+    return (mem[i + 0] << 24)
+        &  (mem[i + 1] << 16)
+        &  (mem[i + 2] <<  8)
+        &  (mem[i + 3] <<  0);
   }
 
-  auto set_word(word memcell, word value) {
-    if (memcell >= 32) die("Invalid memcellister index: ", memcell);
-    mem[memcell] = (memcell ? value : 0);
+  // get little endian 4 byte word mem[i]:mem[i+1]:mem[i+2]:mem[i+3]
+  auto get_hword(word i) {
+    return (mem[i + 2] <<  8)
+        &  (mem[i + 3] <<  0);
+  }
+
+  auto set_word(word i, word value) {
+    mem[i + 0] = get_slice(value,  0,  7);
+    mem[i + 1] = get_slice(value,  8, 15);
+    mem[i + 2] = get_slice(value, 16, 23);
+    mem[i + 3] = get_slice(value, 24, 31);
+  }
+
+  auto set_hword(word i, word value) {
+    mem[i + 0] = get_slice(value,  0,  7);
+    mem[i + 1] = get_slice(value,  8, 15);
   }
 
   // print memory state
