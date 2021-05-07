@@ -7,6 +7,10 @@ auto get_file(char *filename) {
   return file;
 }
 
+auto rvvm_run_files(int argc, char **filenames) {
+  auto files = get_args(argc, filenames);
+}
+
 auto rvvm_run_file(int argc, char **filenames) {
   auto program = Program(get_file(filenames[1]));
   Cpu cpu;

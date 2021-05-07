@@ -3,6 +3,7 @@ using namespace olib;
 using word = u32;
 using byte = u8;
 
+// -------------------------------------------
 inline auto slice(word w, int l, int u) {
   return (word) (w << (31 - u)) >> (31 - u + l);
 }
@@ -38,6 +39,7 @@ inline auto print_bits(byte w) {
   put("'");
   put(std::bitset<4>(get_slice(w, 0, 3)));
 }
+
 inline auto hex(word w) {
   put("0x'");
   put(std::hex);
@@ -51,13 +53,11 @@ inline auto print_hex(word w) {
 
 inline auto print_bits(word w) {
   put("0b");
-
   // print 8 apostroph-seperated nibbles
   for (int i = 7; i >= 0; i--) {
     put("'");
     put(std::bitset<4>(get_slice(w, i * 4, (i * 4) + 3)));
   }
-
   put("\n");
 }
 
@@ -74,11 +74,12 @@ inline auto sxt(word& w, int from, int to) {
 }
 
 // Word structure for processing all machine words
-struct Word {
+struct Word : public word { // alternative
+/* struct Word { */
   word w;
 
-  Word() { w = 0; }
-  Word(word _w)                    { w = _w; }
+  Word()        : w{0}  {}
+  Word(word _w) : w{_w} {}
   
   auto at(u32 i)                  { return get_slice(w, i, i); }
   auto at(u32 l, u32 u)           { return get_slice(w, l, u); }
@@ -94,4 +95,5 @@ struct Word {
 
 inline auto sxt(Word w) {
   /* w & (1 << 31) ? 1:0; */
+  return w;
 }

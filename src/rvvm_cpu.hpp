@@ -4,7 +4,7 @@ struct Cpu {
   word      pc;
   Registers regs;
   Memory    mem;
-
+  
   inline auto next_instruction() { return Instruction(mem[pc]); }
 
   inline auto exec_LUI        (Instruction w) {
@@ -97,7 +97,7 @@ struct Cpu {
   inline auto exec_SRAI       (Instruction w) { }
 
   inline auto exec_ADD        (Instruction w) {
-    // x[w.rd] = x[w.rs1] + x[w.rs2];
+    x[w.rd] = x[w.rs1] + x[w.rs2];
   }
 
   inline auto exec_SUB        (Instruction w) {
@@ -231,7 +231,6 @@ struct Cpu {
       case Operation::PAUSE      : return exec_PAUSE      (w);
       case Operation::ECALL      : return exec_ECALL      (w);
       case Operation::EBREAK     : return exec_EBREAK     (w);
-
       case Operation::DECODE_ERR : return exec_DECODE_ERR (w);
       case Operation::NOIMPL     : return exec_NOIMPL     (w);
     }
