@@ -152,16 +152,11 @@ auto range(int from, int to) {
   return vector;
 }
 
-// python type ranges [ from, ..., to )
-auto range_(int from, int to) {
-  if (from < to) return range(from, to - 1);
-  if (from > to) return range(from, to + 1);
-  return Vector<int>(); // if from == to
-}
-
 // python type range [ 0, ..., to )
-auto range_(int to) {
-  return range_(0, to);
+auto range(int to) {
+  if (0 < to) return range(0, to - 1);
+  if (0 > to) return range(0, to + 1);
+  return Vector<int>(); // if from == to
 }
 
 

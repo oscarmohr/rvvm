@@ -74,8 +74,8 @@ inline auto sxt(word& w, int from, int to) {
 }
 
 // Word structure for processing all machine words
-struct Word : public word { // alternative
-/* struct Word { */
+/* struct Word : public word { // alternative */
+struct Word {
   word w;
 
   Word()        : w{0}  {}

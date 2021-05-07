@@ -10,27 +10,19 @@ enum class Opcode {
   OP       = 0b011'0011,  // type R : ADD,..., AND
   MISC_MEM = 0b000'1111,  // FENCE, FENCE_TSO, PAUSE
   SYSTEM   = 0b111'0011,  // type I : ECALL, EBREAK ?
-
   NOIMPL,
 };
 
 enum class Operation {
   LUI, AUIPC, JAL, JALR, BEQ, BNE, BLT, BGE, BLTU, BGEU,
-  LB, LH, LW, LBU, LHU, SB, SH, SW, ADDI, SLTI,
-  SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI, ADD, SUB, SLL,
-  SLT, SLTU, XOR, SRL, SRA, OR, AND, FENCE, FENCE_TSO, PAUSE,
-  ECALL, EBREAK,
-  DECODE_ERR, NOIMPL,
+  LB, LH, LW, LBU, LHU, SB, SH, SW, ADDI, SLTI, SLTIU,
+  XORI, ORI, ANDI, SLLI, SRLI, SRAI, ADD, SUB, SLL, SLT, SLTU,
+  XOR, SRL, SRA, OR, AND, FENCE, FENCE_TSO, PAUSE,
+  ECALL, EBREAK, DECODE_ERR, NOIMPL,
 };
 
-
 enum class InstructionType {
-  R,
-  I,
-  S,
-  B,
-  U,
-  J,
+  R, I, S, B, U, J,
 };
 
 struct Instruction : Word {
