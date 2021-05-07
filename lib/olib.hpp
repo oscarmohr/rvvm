@@ -1,1 +1,179 @@
-/home/o/olib.hpp
+#include <cstdint>
+#include <fstream>
+#include <istream>
+#include <iostream>
+#include <map>
+#include <vector>
+#include <numeric>
+#include <bitset>
+
+namespace olib {
+
+////////////////////////////////////////////////////////////
+// types
+////////////////////////////////////////////////////////////
+
+using i32 = int32_t;
+using i64 = int64_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using u8  = uint8_t;
+
+using String = std::string;
+
+template <typename T>
+using Vector = std::vector<T>;
+
+template <typename T1, typename T2>
+using Map    = std::map<T1, T2>;
+
+auto& in = std::cin;
+auto& out = std::cout;
+
+
+////////////////////////////////////////////////////////////
+// Input/Output
+////////////////////////////////////////////////////////////
+
+auto print() { // as recursion base
+  std::cout << std::endl;
+}
+
+template <typename T, typename... Ts> // variadic version
+auto print(T t, Ts... ts) {
+  std::cout << t;
+  print(ts...);
+}
+
+/* template <typename T> // old one argument version */
+/* auto print(T t) { */
+/*   std::cout << t << std::endl; */
+/* } */
+
+template <typename T>
+auto put(T t) {
+  std::cout << t;
+}
+
+template<typename T>
+auto print_vector(Vector<T> vector) {
+  put("(");
+  for (auto element : vector) {
+    put(element);
+    put(" ");
+    }
+  print(")");
+}
+
+template<typename T>
+auto print_templated(T printee) {
+  for (auto element : printee)
+    out << element;
+}
+
+auto getline() {
+  String line;
+  std::getline(in, line);
+  return line;
+}
+
+template <typename T>
+auto getline(T t) {
+  put(t);
+  return getline();
+}
+
+template <typename T>
+auto get() {
+  T t;
+  in >> t;
+  return t;
+}
+
+template <typename T>
+auto output(T t) {
+  put(t);
+}
+
+auto input(String s) {
+  put(s);
+  in >> s;
+  return s;
+}
+
+auto die(String s) {
+  print(s);
+  exit(EXIT_FAILURE);
+}
+
+template <typename T>
+auto inform(String s, T t) {
+  put(s);
+  print(t);
+}
+
+
+////////////////////////////////////////////////////////////
+// Ranges
+////////////////////////////////////////////////////////////
+
+template<typename T>
+auto reverse(T t) {
+  std::reverse(t.begin(), t.end());
+}
+
+template<typename T>
+inline auto min(T t1, T t2) {
+  return t1  <= t2 ? t1 : t2;
+}
+
+template<typename T>
+inline auto max(T t1, T t2) {
+  return t1  <= t2 ? t2 : t1;
+}
+
+// fill container ascendingly from from
+template<typename T>
+auto fill(T& t, int from) {
+  std::iota(t.begin(), t.end(), from);
+}
+
+// inclusive discrete ranges [ from, ..., to ]
+auto range(int from, int to) {
+  auto minimum = min(from, to);
+  auto maximum = max(from, to);
+  auto size    = maximum - minimum + 1;
+  auto vector  = Vector<int>(size);
+
+  fill(vector, minimum);
+  if (from != minimum)
+    reverse(vector);
+
+  return vector;
+}
+
+// python type ranges [ from, ..., to )
+auto range_(int from, int to) {
+  if (from < to) return range(from, to - 1);
+  if (from > to) return range(from, to + 1);
+  return Vector<int>(); // if from == to
+}
+
+// python type range [ 0, ..., to )
+auto range_(int to) {
+  return range_(0, to);
+}
+
+
+////////////////////////////////////////////////////////////
+// arguments
+////////////////////////////////////////////////////////////
+
+auto get_args(int argc, char **argv) {
+  auto args = Vector<String>();
+  for (auto i : range(0, argc - 1))
+    args.push_back(String(argv[i]));
+  return args;
+}
+
+}; // namespace olib
