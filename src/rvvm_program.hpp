@@ -1,9 +1,9 @@
 struct Program {
-  Vector<Instruction> instructions;
-  Vector<byte> data_segment;
+  auto instructions = Vector<Instruction>();
+  auto data_segment = Vector<byte>();
 
   auto add_instr(Instruction w) { instructions.push_back(w); }
-  auto add_data(byte w) { data_segment.push_back(w); }
+  auto add_data(byte w)         { data_segment.push_back(w); }
 
   Program(String filename) {
     std::ifstream file;

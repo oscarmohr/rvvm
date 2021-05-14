@@ -3,7 +3,9 @@ using namespace olib;
 using word = u32;
 using byte = u8;
 
-// -------------------------------------------
+////////////////////////////////////////////////////////////
+// bit manipulation and retrieval
+////////////////////////////////////////////////////////////
 inline auto slice(word w, int l, int u) {
   return (word) (w << (31 - u)) >> (31 - u + l);
 }

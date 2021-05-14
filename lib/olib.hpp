@@ -112,6 +112,14 @@ auto inform(String s, T t) {
   print(t);
 }
 
+auto get_file(String filename) {
+  std::ifstream file;
+  file.open(filename, std::ios::in);
+  if (!file)
+    die("Failed to open file ", filename);
+  return file;
+}
+
 
 ////////////////////////////////////////////////////////////
 // Ranges
