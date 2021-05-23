@@ -35,33 +35,28 @@ auto& out = std::cout;
 // Input/Output
 ////////////////////////////////////////////////////////////
 
-auto print() { // as recursion base
-  std::cout << std::endl;
-}
+// as recursion base
+auto print() { std::cout << std::endl; }
 
-template <typename T, typename... Ts> // variadic version
+// variadic version
+template <typename T, typename... Ts> 
 auto print(T t, Ts... ts) {
   std::cout << t;
   print(ts...);
 }
+auto put() { } // as recursion base
 
-/* template <typename T> // old one argument version */
-/* auto print(T t) { */
-/*   std::cout << t << std::endl; */
-/* } */
-
-template <typename T>
-auto put(T t) {
+template <typename T, typename... Ts> // variadic version
+auto put(T t, Ts... ts) {
   std::cout << t;
+  put(ts...);
 }
 
 template<typename T>
 auto print_vector(Vector<T> vector) {
   put("(");
-  for (auto element : vector) {
-    put(element);
-    put(" ");
-    }
+  for (auto element : vector)
+    put(element, " ");
   print(")");
 }
 
@@ -107,6 +102,12 @@ auto die(String s) {
 }
 
 template <typename T>
+auto die(String s, T t) {
+  put(s); put(t);
+  exit(EXIT_FAILURE);
+}
+
+template <typename T>
 auto inform(String s, T t) {
   put(s);
   print(t);
@@ -147,16 +148,14 @@ auto fill(T& t, int from) {
 }
 
 // inclusive discrete ranges [ from, ..., to ]
-auto range(int from, int to) {
+Vector range(int from, int to) {
   auto minimum = min(from, to);
   auto maximum = max(from, to);
   auto size    = maximum - minimum + 1;
   auto vector  = Vector<int>(size);
 
   fill(vector, minimum);
-  if (from != minimum)
-    reverse(vector);
-
+  if (from != minimum) reverse(vector);
   return vector;
 }
 
