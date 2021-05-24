@@ -12,12 +12,11 @@
 
 ***********************************************************/
 
-#include "/home/o/olib.hpp"
-#include "rvvm_word.hpp"
+#include "olib.hpp"
 
 using namespace olib;
-using word = u32;
 using byte = u8;
+using word = u32;
 
 ////////////////////////////////////////////////////////////
 // bit manipulation and retrieval
@@ -27,31 +26,36 @@ inline auto slice(word w, int l, int u) {
 }
 
 // returns word with bits w[u:l] ones and zeroes else
+inline auto ones(int l, int u) {
+  return ((word) slice(-1, l, u)) << l;
+}
+
+inline auto zeroes(int l, int u) {
+  return ~ones(l, u);
+}
+
 inline auto slice_mask(int l, int u) {
   /* return (((word) -1) << l) >> (31 - u); */
   return ((word) slice(-1, l, u)) << l;
 }
 
 // get bits w[u:l] as least significant digits
-inline auto get_slice(word w, int l, int u) {
+inline word get_slice(word w, int l, int u) {
   return (word) (w << (31 - u)) >> (31 - u + l);
 }
 
 // changes bits w[u:l] to the bits v[u-l+1:0]
 // soon: w.at(l, u) = v.at(0, u - l);
-inline auto set_slice(word& w, word v, int l, int u) {
-  // align v with slice and zero bits not in slice
-  v = (v << l) & slice_mask(l, u);
-
-  // zero bits in slice and set them to the slice in v
-  w = w & ~slice_mask(l, u) | v;
-
-  return w;
+// align v with slice and zero bits not in slice
+// zero bits in slice and set them to the slice in v
+inline void set_slice(word& w, word v, int l, int u) {
+  w = (w & ~slice_mask(l, u))
+    | ((v << l) & slice_mask(l, u));
 }
 
 inline String bits(byte w) {
   String out = "0b";
-  for (auto i : range(1, 0)) // print 2 apostroph-seperated nibbles
+  for (auto i : range(1, 0)) // 2 apostroph-seperated nibbles
     { out += "'"; out += std::bitset<4>(get_slice(w, i * 4, (i * 4) + 3)).to_string(); }
   return out;
 }
@@ -87,6 +91,8 @@ inline auto sxt(word& w, int from, int to) {
   if (bit_at(w, from)) w |=  slice_mask(from + 1, to);
   else                 w &= ~slice_mask(from + 1, to);
 }
+
+inline auto sxt(word& w, int from) { sxt(w, from, 31); }
 
 // Word structure for processing all machine words
 /* struct Word : public word { // alternative */
@@ -166,13 +172,12 @@ struct Instruction : Word {
 
   Instruction(word _w) { // establish invariant instruction fields
     w         = _w;
-    opcode    = Opcode(get_slice(w, 0, 6));
-    rd        = get_slice(w,  7, 11);
-    rs1       = get_slice(w, 15, 19);
-    rs2       = get_slice(w, 20, 24);
-    funct3    = get_slice(w, 12, 14);
-    funct7    = get_slice(w, 25, 31);
-
+    opcode    = Opcode(Word(w)(0, 6));
+    rd        = Word(w)( 7, 11);
+    rs1       = Word(w)(15, 19);
+    rs2       = Word(w)(20, 24);
+    funct3    = Word(w)(12, 14);
+    funct7    = Word(w)(25, 31);
     switch (opcode) { // get type
     case Opcode::LUI      : type = InstructionType::U; break;
     case Opcode::AUIPC    : type = InstructionType::U; break;
@@ -283,7 +288,9 @@ struct Registers {
 struct Memory {
   Map<word, byte> mem; // map for random access without huge contiguous array
 
-  byte get_byte (word i) { return mem[i]; }
+  byte get_byte (word i) {
+    return mem[i];
+  }
   word get_hword(word i) {
     return (mem[i + 0] << (0 * 8))
         &  (mem[i + 1] << (1 * 8));
@@ -294,7 +301,10 @@ struct Memory {
         &  (mem[i + 2] << (2 * 8))
         &  (mem[i + 3] << (3 * 8));
   }
-  void set_byte (word i, word value) { mem[i] = get_slice(0, 7); }
+
+  void set_byte (word i, word value) {
+    mem[i] = get_slice(0, 7);
+  }
   void set_hword(word i, word value) {
     mem[i + 0] = get_slice(value,  0,  7);
     mem[i + 1] = get_slice(value,  8, 15);
@@ -386,6 +396,38 @@ struct Cpu {
 
                     
                     
+
+////////////////////////////////////////////////////////////
+// Program
+////////////////////////////////////////////////////////////
+
+struct Program {
+  auto instructions = Vector<Instruction>();
+  auto data_segment = Vector<byte>();
+
+  auto add_instr(Instruction w) { instructions.push_back(w); }
+  auto add_data(byte w)         { data_segment.push_back(w); }
+
+  Program(String filename) {
+    std::ifstream file;
+    file.open(filename, std::ios::in);
+
+    if (!file) die("Failed to open file ", filename);
+
+    auto lines = Vector<String>();
+
+    for (auto line : lines)
+      add_instr(Instruction(line));
+  }
+
+  Program(char **filename_chars) {
+    auto filename = (String) filename_chars[1];
+    Program(filename);
+  }
+};
+
+
+
 ////////////////////////////////////////////////////////////
 // Assembler
 ////////////////////////////////////////////////////////////
@@ -397,7 +439,7 @@ Map<String, Operation> operation_from_string {
   { "auipc"     , Operation::AUIPC     },
   { "jal"       , Operation::JAL       },
   { "jalr"      , Operation::JALR      },
-  { "beq"   	  , Operation::BEQ       },
+  { "beq"       , Operation::BEQ       },
   { "bne"   	  , Operation::BNE       },
   { "blt"   	  , Operation::BLT       },
   { "bge"   	  , Operation::BGE       },
@@ -463,34 +505,5 @@ void rvvm_run_shell() {
   for (String line; line = getline(PROMPT);)
     cpu.exec(Instruction(line));
 }
-
-////////////////////////////////////////////////////////////
-// Program
-////////////////////////////////////////////////////////////
-
-struct Program {
-  auto instructions = Vector<Instruction>();
-  auto data_segment = Vector<byte>();
-
-  auto add_instr(Instruction w) { instructions.push_back(w); }
-  auto add_data(byte w)         { data_segment.push_back(w); }
-
-  Program(String filename) {
-    std::ifstream file;
-    file.open(filename, std::ios::in);
-
-    if (!file) die("Failed to open file ", filename);
-
-    auto lines = Vector<String>();
-
-    for (auto line : lines)
-      add_instr(Instruction(line));
-  }
-
-  Program(char **filename_chars) {
-    auto filename = (String) filename_chars[1];
-    Program(filename);
-  }
-};
 
 }; // namespace rvvm
