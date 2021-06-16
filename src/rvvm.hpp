@@ -57,15 +57,15 @@ enum class Instruction { // RISC-V Instruction Set
   FENCE, FENCE_TSO, PAUSE, ECALL, EBREAK, RVVM_ERR
 };
 
-Opcode opcode(u64 i) { return Opcode(slice(i, 0, 6)); }
-u64 get_rd(u64 i)        { return slice(i,  7, 11); }
-u64 get_rs1(u64 i)       { return slice(i, 15, 19); }
-u64 get_rs2(u64 i)       { return slice(i, 20, 24); }
-u64 get_funct3(u64 i)    { return slice(i, 12, 14); }
-u64 get_funct7(u64 i)    { return slice(i, 25, 31); }
+Opcode get_opcode(u32 i) { return Opcode(slice(i, 0, 6)); }
+u32 get_rd(u32 i)        { return slice(i,  7, 11); }
+u32 get_rs1(u32 i)       { return slice(i, 15, 19); }
+u32 get_rs2(u32 i)       { return slice(i, 20, 24); }
+u32 get_funct3(u32 i)    { return slice(i, 12, 14); }
+u32 get_funct7(u32 i)    { return slice(i, 25, 31); }
 
-InstructionType get_type(u64 i) {
-  switch (opcode(i)) {
+InstructionType get_type(u32 i) {
+  switch (get_opcode(i)) {
   using enum Opcode;
   using enum InstructionType;
   case LUI:         return U;
@@ -84,7 +84,7 @@ InstructionType get_type(u64 i) {
   }
 }
 
-u64 get_imm(u64 i) {
+u32 get_imm(u32 i) {
   switch (get_type(i)) {
   using enum InstructionType;
   case I: return sxt((slice(i, 31, 20)      ), 12);
@@ -103,8 +103,8 @@ u64 get_imm(u64 i) {
   }
 }
 
-Instruction get_instruction(u64 i) {
-  switch (opcode(i)) {
+Instruction get_instruction(u32 i) {
+  switch (get_opcode(i)) {
   using enum Instruction;
   case Opcode::LUI:   return LUI;
   case Opcode::AUIPC: return AUIPC;
@@ -175,6 +175,7 @@ struct Machine {
   std::map<u32, u8> mem;
   std::vector<u32>  regs = std::vector<u32>(33);
   u32 pc = 0;
+  u32 cycles = 0;
 
   // registers
   u32& x(u8 i);
@@ -187,6 +188,15 @@ struct Machine {
   void sh(u32 w, u32 i);
   void sw(u32 w, u32 i);
   void sd(u32 w, u32 i);
+
+  std::string str() {
+    std::stringstream ss{std::stringstream()};
+    ss << "==================== memory>    ====================\n";
+    for (auto i : range_(mem.size()))
+      ss << "mem[" << ::str(i) << "] = " << ::str(mem[i]) << '\n';
+    ss << "==================== <memory    ====================";
+    return ss.str();
+  }
 
   // load/store n bytes starting from adress i
   u32 load(u8 n, u32 i);
@@ -274,6 +284,7 @@ void Machine::exec(u32 i) {
   default:                                      break;
   }
   pc += 4;
+  cycles++;
 }
 
 } // namespace rvvm
