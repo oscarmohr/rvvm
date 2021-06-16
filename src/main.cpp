@@ -12,9 +12,10 @@
 
 ***********************************************************/
 
-#include "rvvm.cpp"
+#include "rvvm.hpp"
 
 int main(int argc, char **argv) {
   // if (argc > 1) rvvm_run_files(argc, argv);
   // else          rvvm_run_shell();
+  rvvm_run_shell();
 }

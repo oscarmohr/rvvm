@@ -18,56 +18,79 @@ using namespace olib; // String, getline, u8, ...
 namespace rvvm {
 
 ////////////////////////////////////////////////////////////
-// Abstract Machine Word, Bit Manipulation
+// Bit Manipulation
 ////////////////////////////////////////////////////////////
 
-using  word = u32; // see olib for u8, u32 fixed width int
+using word = u32; // see olib for u8, u32 fixed width int
+
+word get_slice(word w, word l, word u) { // get bits w[u:l] as lsd's
+  word shamt_l = 31 - u;
+  word shamt_r = 31 - u + l;
+  return  (w << shamt_l) >> shamt_r;
+}
+word ones  (word l, word u) { return get_slice(-1, l, u) << l; } 
+word zeroes(word l, word u) { return ~ones(l, u);              }
+
+void set_slice(word& w, word v, word l, word u) {
+  w = (w & zeroes(l, u))  |  ((v << l) & ones(l, u));
+}
+
+
+////////////////////////////////////////////////////////////
+// Abstract Machine Word
+////////////////////////////////////////////////////////////
+
 struct Word { // abstract machine word
-  word     w;
-  // Bits<32> b;
+  word w;
 
   Word(word _w) : w{_w}      {}
-  Word(Word _w) : Word(_w.w) {}
   Word()        : Word(0)    {}
 
-  Word  operator=  (Word& rhs) { return w = rhs.w;        } // arithmetic and logic
-  bool  operator== (Word& rhs) { return w == rhs;         }
-  Word& operator+  (Word& rhs) { return Word(w  + rhs.w); }
-  Word& operator-  (Word& rhs) { return Word(w  - rhs.w); }
-  Word& operator<< (Word& rhs) { return Word(w << rhs.w); }
-  Word& operator>> (Word& rhs) { return Word(w >> rhs.w); }
+  Word operator=  (word rhs) { return w = rhs;          } // copy assignment
+  Word operator=  (Word rhs) { return w = rhs.w;        }
+  bool operator== (word rhs) { return w == rhs;         } // comparison
+  bool operator== (Word rhs) { return w == rhs.w;       }
+  bool operator<= (word rhs) { return w <= rhs;         }
+  bool operator<= (Word rhs) { return w <= rhs.w;       }
+  bool operator<  (word rhs) { return w <  rhs;         }
+  bool operator<  (Word rhs) { return w <  rhs.w;       }
+  bool operator>= (word rhs) { return w >= rhs;         }
+  bool operator>= (Word rhs) { return w >= rhs.w;       }
+  bool operator>  (word rhs) { return w >  rhs;         }
+  bool operator>  (Word rhs) { return w >  rhs.w;       }
+  Word operator+  (word rhs) { return Word(w  + rhs  ); } // arithmetic
+  Word operator+  (Word rhs) { return Word(w  + rhs.w); }
+  Word operator-  (word rhs) { return Word(w  - rhs  ); }
+  Word operator-  (Word rhs) { return Word(w  - rhs.w); }
 
-  inline word get_slice(word w, word l, word u) { // get bits w[u:l] as lsd's
-    return  (w << (31 - u)) >> (31 - u + l);
+  Word operator<< (word rhs) { return Word(w << rhs  ); } // bitshifts
+  Word operator<< (Word rhs) { return Word(w << rhs.w); }
+  Word operator>> (word rhs) { return Word(w >> rhs  ); }
+  Word operator>> (Word rhs) { return Word(w >> rhs.w); }
+
+  Word operator&  (word rhs) { return Word(w  & rhs  ); } // logic
+  Word operator&  (Word rhs) { return Word(w  & rhs.w); }
+  Word operator|  (word rhs) { return Word(w  | rhs  ); }
+  Word operator|  (Word rhs) { return Word(w  | rhs.w); }
+  Word operator^  (word rhs) { return Word(w  ^ rhs  ); }
+  Word operator^  (Word rhs) { return Word(w  ^ rhs.w); }
+  Word operator~  ()         { return Word(~w);         }
+
+  Word get(u32 l, u32 u)           { return Word(get_slice(w, l, u)); }
+  Word get(u32 i)                  { return Word(get_slice(w, i, i)); }
+  void set(Word v, word l, word u) { set_slice(w, v.w, l, u); }
+  void set(word v)                 { set(v, 0, 31); }
+  Word operator()(word l, word u)  { return get(l, u); } // for w(0, 31)
+  Word operator()(word i)          { return get(i, i); }
+
+  void sxt(word from, word to) { // sign extend
+    w = get_slice(w, from, from)
+        ? w |  ones(from + 1, to)
+        : w & ~ones(from + 1, to);
   }
+  void sxt(word from) { sxt(from, 31); } // might add RV64 support
 
-  inline word ones(word l, word u) { // 1...1 = -1 in two's complement
-    return get_slice(-1, l, u) << l;
-  } 
-  inline word zeroes(word l, word u) { // w[i] = 0 iff l<=>i<=>u
-    return ~ones(l, u);
-  }
-
-  inline void set_slice(word& w, word v, word l, word u) { // w[u:l] :=  v[u-l+1:0]
-    w = (w & zeroes(l, u)) // w = 0b$w[31]...$w[l+1]0...0$w[l-1]...$w[0]
-      | ((v << l) & ones(l, u)); // zero bits in slice, set them to v's slice
-  }
-
-  inline void sxt(word from, word to) { // sign extend
-    w = get_slice(w, from, from) // determine w[from]
-          ? w |  ones(from + 1, to)
-          : w & ~ones(from + 1, to);
-  }
-  inline void sxt(word from) { sxt(w, from, 31); }
-  // inline void set_bits(word& w, int l, int u) { w |= ones(l, u); } // enables bits w[u:l] REMOVE
-  
-  word get(u32 l, u32 u)           { return get_slice(w, l, u);  }
-  word get(u32 i)                  { return get_slice(w, i, i);  }
-  void set(word v, word l, word u) { return set_slice(w, v, l, u);  }
-  void set(word v)                 { return set_slice(w, v, 0, 31); }
-  word operator()(u32 l, u32 u)    { return get(l, u); } // for w(0, 31)
-  word operator()(u32 i)           { return get(i, i); }
-
+  ////////////////////////////////////////////////////////////
   String binary() {
     String out = "0b";
     for (auto i : range(7, 0)) // 8 apostroph-seperated nibbles
@@ -98,6 +121,8 @@ enum class Opcode {
   NOIMPL,
 };
 
+Opcode opcode_of(Word w) { return Opcode(0b0110111); }
+
 enum class InstructionType { R, I, S, B, U, J, };
 
 enum class Operation {
@@ -125,14 +150,13 @@ struct Instruction : Word { // execution context of machine word
   InstructionType type;
   word            imm;
 
-  Instruction(word _w) { // establish invariant instruction fields
-    w         = _w;
-    opcode    = Opcode(Word(w)(0, 6));
-    rd        = Word(w)( 7, 11);
-    rs1       = Word(w)(15, 19);
-    rs2       = Word(w)(20, 24);
-    funct3    = Word(w)(12, 14);
-    funct7    = Word(w)(25, 31);
+  Instruction(word _w) : Word(_w) { // establish invariant instruction fields
+    opcode    = Opcode(Word(w)(0, 6).w);
+    rd        = Word(w)( 7, 11).w;
+    rs1       = Word(w)(15, 19).w;
+    rs2       = Word(w)(20, 24).w;
+    funct3    = Word(w)(12, 14).w;
+    funct7    = Word(w)(25, 31).w;
 
     switch (opcode) { // decoding: get type
     case Opcode::LUI      : type = InstructionType::U; break;
@@ -149,6 +173,7 @@ struct Instruction : Word { // execution context of machine word
     case Opcode::NOIMPL   : type = InstructionType::I; break;
     default               : type = InstructionType::I; break;
     }
+
     switch (type) { // get immediate
     case InstructionType::I : imm = get_slice(w, 20, 31);                    break;
     case InstructionType::S : imm = (Word(w)(25, 31) << 5) | Word(w)(7, 11); break;
@@ -157,6 +182,7 @@ struct Instruction : Word { // execution context of machine word
     case InstructionType::J : imm = word(0);                                 break;
     default                 : imm = word(0);                                 break;
     }
+
     switch (opcode) { // get operation (instruction-decoding)
     case Opcode::LUI      : operation = Operation::LUI;                             break;
     case Opcode::AUIPC    : operation = Operation::AUIPC;                           break;
@@ -221,10 +247,11 @@ struct Instruction : Word { // execution context of machine word
 ////////////////////////////////////////////////////////////
 
 struct Registers {
-  Vector<word> x = Vector<word>(33); // 32 regs + 1 dummy reg
-  word& operator[](word i) {
+  Vector<Word> x = Vector<Word>(33); // 32 regs + 1 dummy reg
+
+  Word& operator[](word i) {
     if (i >= 32) olib::die("Bad Register Index: ", i);
-    return i ? x[i] : (x[32] = 0);
+    return i ? x[i] : (x[32] = 0); // return dummy reg x32=0 instead of x0
   }
   void print(word count) { // print first count registers
     count = min(count, 32);
@@ -242,36 +269,37 @@ struct Registers {
 ////////////////////////////////////////////////////////////
 
 struct Memory {
-  /* Map<Word, byte> mem; // runtime effient byte retrieval */
   Map<Word, Word> mem; // space-efficient, simple random access
-  // sign extension for byte and hword loads/stores anyway REMOVE
 
-  byte get_byte (word i) { // sign extend
-    return mem[i].sxt(from=8, to=31);
+  Word& operator[](Word i) { return mem[i.w]       }
+  Word& get(Word i)        { return operator[](i); }
+
+  Word get_byte (Word i) { // sign extend
+    return get(i).sxt(8, 31);
   }
-  word get_hword(word i) { // sign extend
-    return (mem[i + 0] << (0 * 8))
-        &  (mem[i + 1] << (1 * 8));
+  Word get_hword(Word i) { // sign extend
+    return (get(i + 0) << (0 * 8))
+        &  (get(i + 1) << (1 * 8));
   }
-  word get_word (word i) { // get little endian 4 byte word
-    return (mem[i + 0] << (0 * 8))
-        &  (mem[i + 1] << (1 * 8))
-        &  (mem[i + 2] << (2 * 8))
-        &  (mem[i + 3] << (3 * 8));
+  Word get_word (Word i) { // get little endian 4 byte word
+    return (get(i + 0) << (0 * 8))
+        &  (get(i + 1) << (1 * 8))
+        &  (get(i + 2) << (2 * 8))
+        &  (get(i + 3) << (3 * 8));
   }
 
-  void set_byte (word i, word value) {
-    mem[i] = get_slice(i, 0, 7); // bits w[:7] are 0
+  void set_byte (Word i, word value) {
+    get(i) = get_slice(i, 0, 7); // bits w[:7] are 0
   }
-  void set_hword(word i, word value) {
-    mem[i + 0] = get_slice(value,  0,  7);
-    mem[i + 1] = get_slice(value,  8, 15);
+  void set_hword(Word i, word value) {
+    get(i + 0) = get_slice(value,  0,  7);
+    get(i + 1) = get_slice(value,  8, 15);
   }
-  void set_word (word i, word value) {
-    mem[i + 0] = get_slice(value,  0,  7);
-    mem[i + 1] = get_slice(value,  8, 15);
-    mem[i + 2] = get_slice(value, 16, 23);
-    mem[i + 3] = get_slice(value, 24, 31);
+  void set_word (Word i, word value) {
+    get(i + 0) = get_slice(value,  0,  7);
+    get(i + 1) = get_slice(value,  8, 15);
+    get(i + 2) = get_slice(value, 16, 23);
+    get(i + 3) = get_slice(value, 24, 31);
   }
 
   void print() {
@@ -294,10 +322,10 @@ struct Cpu {
   word         pc;
 
   void exec(Instruction instruction) {
-    auto& rd        = x[instruction.rd ];
-    auto& rs1       = x[instruction.rs1];
-    auto& rs2       = x[instruction.rs2];
-    auto  imm       =   instruction.imm;
+    Word& rd        = x[instruction.rd ];
+    Word& rs1       = x[instruction.rs1];
+    Word& rs2       = x[instruction.rs2];
+    Word  imm       =   instruction.imm;
     switch             (instruction.operation) {
     case Operation::LUI        : rd = imm;                              break;
     case Operation::AUIPC      : pc += imm;                             break;
@@ -455,4 +483,4 @@ String PROMPT = "rvvm>";
 /*     cpu.exec(Instruction(line)); */
 /* } */
 
-}; // namespace rvvm
+
