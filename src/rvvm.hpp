@@ -19,12 +19,13 @@ namespace rvvm {
 // RISC-V Opcodes, InstructionTypes, Instructions, Decode //
 ////////////////////////////////////////////////////////////
 
-u32 slice(u32 w, u8 l, u8 u) { return (w << 31 - u) >> 31 - u + l; }
-u32 ones        (u8 l, u8 u) { return slice(-1, l, u) << l;        } 
-u32 zeroes      (u8 l, u8 u) { return ~ones(l, u);                 }
+u32 slice(u32 w, u8 l, u8 u) { return (w << (31 - u)) >> (31 - u + l); }
+u32 ones        (u8 l, u8 u) { return slice(-1, l, u) << l;            } 
+u32 zeroes      (u8 l, u8 u) { return ~ones(l, u);                     }
 
-u32 set_slice(u32& w, u32 v, u8 l, u8 u) { // v[u-l:0] = w[u:l]
-  return (w = (w & zeroes(l, u)) | ((v << l) & ones(l, u)));
+u32 set_slice(u32& w, u32 v, u8 l, u8 u) { // w[u:l] = v[u-l:0] 
+  return (w = (w        & zeroes(l, u))
+            | ((v << l) &   ones(l, u)));
 }
 
 u32 sxt(u32 w, u8 from) { // sign extend
@@ -87,14 +88,14 @@ InstructionType get_type(u32 i) {
 u32 get_imm(u32 i) {
   switch (get_type(i)) {
   using enum InstructionType;
-  case I: return sxt((slice(i, 31, 20)      ), 12);
+  case I: return sxt((slice(i, 20, 31)      ), 12);
   case S: return sxt((slice(i, 25, 31) <<  5)
                    | (slice(i,  7, 11)      ), 12);
-  case B: return sxt((slice(i, 31, 32) << 12)
+  case B: return sxt((slice(i, 31, 31) << 12)
                    | (slice(i, 25, 30) <<  5)
                    | (slice(i,  8, 11) <<  1)
                    | (slice(i,  7,  8) << 11), 13);
-  case U: return sxt((slice(i, 31, 12) << 12), 32);
+  case U: return sxt((slice(i, 12, 31) << 12), 32);
   case J: return sxt((slice(i, 31, 32) << 20)
                    | (slice(i, 21, 30) <<  1)
                    | (slice(i, 20, 21) << 11)
@@ -178,57 +179,95 @@ struct Machine {
   u32 cycles = 0;
 
   // registers
-  u32& x(u8 i);
+  u32& x(u8 i) { return i ? regs.at(i) : (regs.at(32) = 0); }
 
-  u32 lb(u32 i);
-  u32 lh(u32 i);
-  u32 lw(u32 i);
-  u32 ld(u32 i);
-  void sb(u32 w, u32 i);
-  void sh(u32 w, u32 i);
-  void sw(u32 w, u32 i);
-  void sd(u32 w, u32 i);
+  // load/store n bytes starting from adress i little endian
+  u32 load(u8 n, u32 i);
+  u32 lb(u32 i) { return load(1, i); }
+  u32 lh(u32 i) { return load(2, i); }
+  u32 lw(u32 i) { return load(4, i); }
+  void store(u8 n, u32 w, u32 i);
+  void sb(u32 w, u32 i) { store(1, w, i); }
+  void sh(u32 w, u32 i) { store(2, w, i); }
+  void sw(u32 w, u32 i) { store(4, w, i); }
 
-  std::string str() {
-    std::stringstream ss{std::stringstream()};
-    ss << "==================== memory>    ====================\n";
-    for (auto i : range_(mem.size()))
-      ss << "mem[" << ::str(i) << "] = " << ::str(mem[i]) << '\n';
-    ss << "==================== <memory    ====================";
+#include "asm.hpp"
+
+  string str_regs() {
+
+    const std::string header = "┌─────────────────────────┐\n"
+                               "│       Registers         │\n"
+                               "├───┬────────┬───┬────────┤\n";
+                            /* "│ x0│00000000│x16│00000000│\n"
+                               "│ x1│00000000│x17│00000000│\n"
+                               "│ x2│00000000│x18│00000000│\n"
+                               "│ x3│00000000│x19│00000000│\n"
+                               "│ x4│00000000│x20│00000000│\n"
+                               "│ x5│00000000│x21│00000000│\n"
+                               "│ x6│00000000│x22│00000000│\n"
+                               "│ x7│00000000│x23│00000000│\n"
+                               "│ x8│00000000│x24│00000000│\n"
+                               "│ x9│00000000│x25│00000000│\n"
+                               "│x10│00000000│x26│00000000│\n"
+                               "│x11│00000000│x27│00000000│\n"
+                               "│x12│00000000│x28│00000000│\n"
+                               "│x13│00000000│x29│00000000│\n"
+                               "│x14│00000000│x30│00000000│\n"
+                               "│x15│00000000│x31│00000000│\n" */
+    const std::string footer = "└───┴────────┴───┴────────┘";
+    std::stringstream ss;
+    ss << header;
+    for (auto i = 0; i < 16; i++) {
+      ss << "│" << std::setw(3) 
+         << std::setfill(' ')
+         << regname[i]
+         << "│" << ::hex_w(x(i))
+         << "│" << std::setw(3) 
+         << std::setfill(' ')
+         << regname[i + 16]
+         << "│" << ::hex_w(x(i + 16))
+         << "│\n";
+    }
+    ss << footer;
     return ss.str();
   }
 
-  // load/store n bytes starting from adress i
-  u32 load(u8 n, u32 i);
-  void store(u8 n, u32 w, u32 i);
+  string str() {
+    const std::string header = "┌──────────────┬───────────┐\n" 
+                               "│     i        │ mem[i:i+3]│\n" 
+                               "├──────────────┼──┬──┬──┬──┤\n";
+    const std::string footer = "└──────────────┴──┴──┴──┴──┘";
+
+    std::stringstream ss;
+    ss << header;
+    for (auto i = 0; i < mem.size(); i += 4) {
+      ss << "│" << ::hex(i);
+      for (auto j = 0; j < 4; j++) {
+        if (!mem.contains(i + j)) break;
+        ss << "│" << ::hex_b(mem[i + j]);
+        if (j == 3) ss << "│\n";
+      }
+    }
+    ss << footer;
+    return ss.str();
+  }
 
   void exec(u32 instruction);
+  void exec() { exec(mem[pc]); }
 };
 
-u32& Machine::x(u8 i) { return i ? regs.at(i) : (regs.at(32) = 0); }
-
-// loads and stores little endian
-u32 Machine::lb(u32 i) { return load(1, i); }
-u32 Machine::lh(u32 i) { return load(2, i); }
-u32 Machine::lw(u32 i) { return load(4, i); }
-u32 Machine::ld(u32 i) { return load(8, i); }
-void Machine::sb(u32 w, u32 i) { store(1, w, i); }
-void Machine::sh(u32 w, u32 i) { store(2, w, i); }
-void Machine::sw(u32 w, u32 i) { store(4, w, i); }
-void Machine::sd(u32 w, u32 i) { store(8, w, i); }
-
-// load n bytes starting from adress i into word
+// load max(n, 4) bytes starting from adress i into word
 u32 Machine::load(u8 n, u32 i) {
   u32 out = 0;
-  for (auto i : range_(min(n, 8)))
-    set_slice(out, mem.at(i), i*8, i*8+7); 
+  for (auto j : range_(min(n, 4)))
+    set_slice(out, mem.contains(i + j) ? mem[i + j] : 0, j*8, j*8+7);
   return out;
 }
 
-// store n bytes of w into i
+// store max(n, 4) bytes of w into i
 void Machine::store(u8 n, u32 w, u32 i) {
-  for (auto j : range_(min(n, 8)))
-    mem.at(i + j) = slice(w, j*8, j*8+7);
+  for (auto j : range_(min(n, 4)))
+    mem[i + j] = slice(w, j*8, j*8+7);
 }
 
 void Machine::exec(u32 i) {
