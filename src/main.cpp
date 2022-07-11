@@ -14,11 +14,6 @@ using u32 = uint32_t;
 using u16 = uint16_t;
 using u8  = uint8_t;
 
-template<typename T>
-constexpr auto is_of(auto x) {
-  return std::is_same<T, decltype(x)>::value;
-}
-
 auto log(const auto&... args) {
   (std::cerr << ... << args) << '\n';
 }
@@ -54,187 +49,212 @@ auto die(const auto&... args) {
   std::exit(EXIT_FAILURE);
 }
 
-using u32 = uint32_t;
-using i32 = int32_t;
-using u16 = uint16_t;
-using i16 = int16_t;
-using u8 = uint8_t;
-using i8 = int8_t;
-
 enum Instruction : size_t {
   LUI, AUIPC,
   JAL, JALR, BEQ, BNE, BLT, BGE, BLTU, BGEU,
   LB, LH, LW, LBU, LHU, SB, SH, SW,
   ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI,
   ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND,
-  EBREAK,
-  UNDEF
+  EBREAK, UNDEF
 };
 
-// decoding constants
-static const u32 OPCODE_LUI         = 0x37;
-static const u32 OPCODE_AUIPC       = 0x17;
-static const u32 OPCODE_JAL         = 0x6f;
-static const u32 OPCODE_JALR        = 0x67;
-static const u32 OPCODE_BRANCH      = 0x63;
-static const u32 OPCODE_LOAD        = 0x03;
-static const u32 OPCODE_STORE       = 0x23;
-static const u32 OPCODE_OP_IMM      = 0x13;
-static const u32 OPCODE_OP          = 0x33;
-static const u32 OPCODE_SYSTEM      = 0x73;
+enum OPCODE : u32 {
+  OPCODE_LUI         = 0x37,
+  OPCODE_AUIPC       = 0x17,
+  OPCODE_JAL         = 0x6f,
+  OPCODE_JALR        = 0x67,
+  OPCODE_BRANCH      = 0x63,
+  OPCODE_LOAD        = 0x03,
+  OPCODE_STORE       = 0x23,
+  OPCODE_OP_IMM      = 0x13,
+  OPCODE_OP          = 0x33,
+  OPCODE_SYSTEM      = 0x73,
+};
 
-#define FUNCT3_BEQ         0x0
-#define FUNCT3_BNE         0x1
-#define FUNCT3_BLT         0x4
-#define FUNCT3_BGE         0x5
-#define FUNCT3_BLTU        0x6
-#define FUNCT3_BGEU        0x7
-#define FUNCT3_LB          0x0
-#define FUNCT3_LH          0x1
-#define FUNCT3_LW          0x2
-#define FUNCT3_LBU         0x4
-#define FUNCT3_LHU         0x5
-#define FUNCT3_SB          0x0
-#define FUNCT3_SH          0x1
-#define FUNCT3_SW          0x2
-#define FUNCT3_ADDI        0x0
-#define FUNCT3_SLTI        0x2
-#define FUNCT3_SLTIU       0x3
-#define FUNCT3_XORI        0x4
-#define FUNCT3_ORI         0x6
-#define FUNCT3_ANDI        0x7
-#define FUNCT3_SLLI        0x1
-#define FUNCT3_SRAI_SRLI   0x5
-#define FUNCT3_SUB_ADD     0x0
-#define FUNCT3_SLL         0x1
-#define FUNCT3_SLT         0x2
-#define FUNCT3_SLTU        0x3
-#define FUNCT3_XOR         0x4
-#define FUNCT3_SRA_SRL     0x5
-#define FUNCT3_OR          0x6
-#define FUNCT3_AND         0x7
+enum FUNCT3 : u32 {
+  FUNCT3_BEQ         = 0x0,
+  FUNCT3_BNE         = 0x1,
+  FUNCT3_BLT         = 0x4,
+  FUNCT3_BGE         = 0x5,
+  FUNCT3_BLTU        = 0x6,
+  FUNCT3_BGEU        = 0x7,
+  FUNCT3_LB          = 0x0,
+  FUNCT3_LH          = 0x1,
+  FUNCT3_LW          = 0x2,
+  FUNCT3_LBU         = 0x4,
+  FUNCT3_LHU         = 0x5,
+  FUNCT3_SB          = 0x0,
+  FUNCT3_SH          = 0x1,
+  FUNCT3_SW          = 0x2,
+  FUNCT3_ADDI        = 0x0,
+  FUNCT3_SLTI        = 0x2,
+  FUNCT3_SLTIU       = 0x3,
+  FUNCT3_XORI        = 0x4,
+  FUNCT3_ORI         = 0x6,
+  FUNCT3_ANDI        = 0x7,
+  FUNCT3_SLLI        = 0x1,
+  FUNCT3_SRAI_SRLI   = 0x5,
+  FUNCT3_SUB_ADD     = 0x0,
+  FUNCT3_SLL         = 0x1,
+  FUNCT3_SLT         = 0x2,
+  FUNCT3_SLTU        = 0x3,
+  FUNCT3_XOR         = 0x4,
+  FUNCT3_SRA_SRL     = 0x5,
+  FUNCT3_OR          = 0x6,
+  FUNCT3_AND         = 0x7,
+};
 
-#define FUNCT7_SRAI        0x20
-#define FUNCT7_SRLI        0
-#define FUNCT7_SUB         0x20
-#define FUNCT7_ADD         0
-#define FUNCT7_SRA         0x20
-#define FUNCT7_SRL         0
+enum FUNCT7 : u32 {
+  FUNCT7_SRAI        = 0x20,
+  FUNCT7_SRLI        = 0,
+  FUNCT7_SUB         = 0x20,
+  FUNCT7_ADD         = 0,
+  FUNCT7_SRA         = 0x20,
+  FUNCT7_SRL         = 0,
+};
 
 // MASK_LO_HI[i] = 1 for i = LO, ..., HI else 0
-#define MASK_00_06         0x0000007f
-#define MASK_07_11         0x00000f80
-#define MASK_15_19         0x000f8000
-#define MASK_20_24         0x01f00000
-#define MASK_12_14         0x00007000
-#define MASK_25_31         0xfe000000
-#define MASK_20_31         0xfff00000
-#define MASK_07_11         0x00000f80
-#define MASK_25_31         0xfe000000
-#define MASK_08_11         0x00000f00
-#define MASK_25_30         0x7e000000
-#define MASK_07_07         0x00000080
-#define MASK_31_31         0x80000000
-#define MASK_12_31         0xfffff000
-#define MASK_21_30         0x7fe00000
-#define MASK_20_20         0x00100000
-#define MASK_12_19         0x000ff000
-#define MASK_31_31         0x80000000
+enum MASK : u32 {
+  MASK_00_06         = 0x0000007f,
+  MASK_07_11         = 0x00000f80,
+  MASK_15_19         = 0x000f8000,
+  MASK_20_24         = 0x01f00000,
+  MASK_12_14         = 0x00007000,
+  MASK_25_31         = 0xfe000000,
+  MASK_20_31         = 0xfff00000,
+  MASK_08_11         = 0x00000f00,
+  MASK_25_30         = 0x7e000000,
+  MASK_07_07         = 0x00000080,
+  MASK_31_31         = 0x80000000,
+  MASK_12_31         = 0xfffff000,
+  MASK_21_30         = 0x7fe00000,
+  MASK_20_20         = 0x00100000,
+  MASK_12_19         = 0x000ff000,
+  MASK_OPCODE        = MASK_00_06,
+  MASK_RD            = MASK_07_11,
+  MASK_RS1           = MASK_15_19,
+  MASK_RS2           = MASK_20_24,
+  MASK_FUNCT3        = MASK_12_14,
+  MASK_FUNCT7        = MASK_25_31,
+  MASK_I_IMM_0       = MASK_20_31,
+  MASK_S_IMM_0       = MASK_07_11,
+  MASK_S_IMM_1       = MASK_25_31,
+  MASK_B_IMM_0       = MASK_08_11,
+  MASK_B_IMM_1       = MASK_25_30,
+  MASK_B_IMM_2       = MASK_07_07,
+  MASK_B_IMM_3       = MASK_31_31,
+  MASK_U_IMM_0       = MASK_12_31,
+  MASK_J_IMM_0       = MASK_21_30,
+  MASK_J_IMM_1       = MASK_20_20,
+  MASK_J_IMM_2       = MASK_12_19,
+  MASK_J_IMM_3       = MASK_31_31,
+};
 
-#define MASK_OPCODE        MASK_00_06
-#define MASK_RD            MASK_07_11
-#define MASK_RS1           MASK_15_19
-#define MASK_RS2           MASK_20_24
-#define MASK_FUNCT3        MASK_12_14
-#define MASK_FUNCT7        MASK_25_31
-#define MASK_I_IMM_0       MASK_20_31
-#define MASK_S_IMM_0       MASK_07_11
-#define MASK_S_IMM_1       MASK_25_31
-#define MASK_B_IMM_0       MASK_08_11
-#define MASK_B_IMM_1       MASK_25_30
-#define MASK_B_IMM_2       MASK_07_07
-#define MASK_B_IMM_3       MASK_31_31
-#define MASK_U_IMM_0       MASK_12_31
-#define MASK_J_IMM_0       MASK_21_30
-#define MASK_J_IMM_1       MASK_20_20
-#define MASK_J_IMM_2       MASK_12_19
-#define MASK_J_IMM_3       MASK_31_31
-
-#define OFFSET_OPCODE      0
-#define OFFSET_RD          7
-#define OFFSET_RS1         15
-#define OFFSET_RS2         20
-#define OFFSET_FUNCT3      12
-#define OFFSET_FUNCT7      25
-#define OFFSET_I_IMM_0     20
-#define OFFSET_S_IMM_0     7
-#define OFFSET_S_IMM_1     25
-#define OFFSET_B_IMM_0     8
-#define OFFSET_B_IMM_1     25
-#define OFFSET_B_IMM_2     7
-#define OFFSET_B_IMM_3     31
-#define OFFSET_U_IMM_0     12
-#define OFFSET_J_IMM_0     21
-#define OFFSET_J_IMM_1     20
-#define OFFSET_J_IMM_2     12
-#define OFFSET_J_IMM_3     31
+enum OFFSET : u32 {
+  OFFSET_OPCODE      = 0,
+  OFFSET_RD          = 7,
+  OFFSET_RS1         = 15,
+  OFFSET_RS2         = 20,
+  OFFSET_FUNCT3      = 12,
+  OFFSET_FUNCT7      = 25,
+  OFFSET_I_IMM_0     = 20,
+  OFFSET_S_IMM_0     = 7,
+  OFFSET_S_IMM_1     = 25,
+  OFFSET_B_IMM_0     = 8,
+  OFFSET_B_IMM_1     = 25,
+  OFFSET_B_IMM_2     = 7,
+  OFFSET_B_IMM_3     = 31,
+  OFFSET_U_IMM_0     = 12,
+  OFFSET_J_IMM_0     = 21,
+  OFFSET_J_IMM_1     = 20,
+  OFFSET_J_IMM_2     = 12,
+  OFFSET_J_IMM_3     = 31,
+};
 
 // position of the immediate parts in their immediate
-#define POS_I_IMM_0        0
-#define POS_S_IMM_0        0
-#define POS_S_IMM_1        5
-#define POS_B_IMM_0        1
-#define POS_B_IMM_1        5
-#define POS_B_IMM_2        11
-#define POS_B_IMM_3        12
-#define POS_U_IMM_0        12
-#define POS_J_IMM_0        1
-#define POS_J_IMM_1        11
-#define POS_J_IMM_2        12
-#define POS_J_IMM_3        20
+enum POS : u32 {
+  POS_I_IMM_0        = 0,
+  POS_S_IMM_0        = 0,
+  POS_S_IMM_1        = 5,
+  POS_B_IMM_0        = 1,
+  POS_B_IMM_1        = 5,
+  POS_B_IMM_2        = 11,
+  POS_B_IMM_3        = 12,
+  POS_U_IMM_0        = 12,
+  POS_J_IMM_0        = 1,
+  POS_J_IMM_1        = 11,
+  POS_J_IMM_2        = 12,
+  POS_J_IMM_3        = 20,
+};
 
 // sign bit position for sign extension
-static const u32 SXT_BIT_I_IMM = 11;
-static const u32 SXT_BIT_S_IMM = 11;
-static const u32 SXT_BIT_B_IMM = 12;
-static const u32 SXT_BIT_U_IMM = 31;
-static const u32 SXT_BIT_J_IMM = 20;
+enum SXT_BIT : u32 {
+  SXT_BIT_I_IMM = 11,
+  SXT_BIT_S_IMM = 11,
+  SXT_BIT_B_IMM = 12,
+  SXT_BIT_U_IMM = 31,
+  SXT_BIT_J_IMM = 20,
+};
+
+u32 sxt(i32 sxt_bit, i32 x) {
+  auto shamt = 31 - sxt_bit; // shift off superflous bits
+  return (x << shamt) >> shamt;
+}
 
 #define SLICE(M, X)        (((X) & MASK_##M) >> OFFSET_##M)
-#define GET_OPCODE(X)      SLICE(OPCODE, X)
-#define GET_FUNCT3(X)      SLICE(FUNCT3, X)
-#define GET_FUNCT7(X)      SLICE(FUNCT7, X)
-#define GET_RD(X)          SLICE(RD, X)
-#define GET_RS1(X)         SLICE(RS1, X)
-#define GET_RS2(X)         SLICE(RS2, X)
-#define GET_IMM(IMM, X)    SXT(SXT_BIT_##IMM##_IMM, PARTS_##IMM(X))
-#define SXT(SXT_BIT, X)    ((u32)(((i32) (X) << (31 - SXT_BIT)) >> (31 - SXT_BIT)))
 #define PART(IMM, PART, X) (SLICE(IMM##_IMM_##PART, X) << POS_##IMM##_IMM_##PART)
-#define PARTS_I(X)         (PART(I, 0, X))
-#define PARTS_S(X)         (PART(S, 0, X) | PART(S, 1, X))
-#define PARTS_B(X)         (PART(B, 0, X) | PART(B, 1, X) | PART(B, 2, X) | PART(B, 3, X))
-#define PARTS_U(X)         (PART(U, 0, X))
-#define PARTS_J(X)         (PART(J, 0, X) | PART(J, 1, X) | PART(J, 2, X) | PART(J, 3, X))
+
+u32 get_opcode(u32 x) { return SLICE(OPCODE, x); }
+u32 get_funct3(u32 x) { return SLICE(FUNCT3, x); }
+u32 get_funct7(u32 x) { return SLICE(FUNCT7, x); }
+u32 get_rd    (u32 x) { return SLICE(RD, x);     }
+u32 get_rs1   (u32 x) { return SLICE(RS1, x);    }
+u32 get_rs2   (u32 x) { return SLICE(RS2, x);    }
+
+i32 get_I_imm(u32 x){
+  auto imm = PART(I, 0, x);
+  return sxt(SXT_BIT_I_IMM, imm);
+}
+
+i32 get_S_imm(u32 x){
+  auto imm = PART(S, 0, x) | PART(S, 1, x);
+  return sxt(SXT_BIT_S_IMM, imm);
+}
+
+i32 get_B_imm(u32 x){
+  auto imm = PART(B, 0, x) | PART(B, 1, x) | PART(B, 2, x) | PART(B, 3, x);
+  return sxt(SXT_BIT_B_IMM, imm);
+}
+
+i32 get_U_imm(u32 x){
+  auto imm = PART(U, 0, x); 
+  return sxt(SXT_BIT_U_IMM, imm);
+}
+
+i32 get_J_imm(u32 x){
+  auto imm = PART(J, 0, x) | PART(J, 1, x) | PART(J, 2, x) | PART(J, 3, x);
+  return sxt(SXT_BIT_J_IMM, imm);
+}
 
 i32 get_imm(u32 inst) {
-  switch (GET_OPCODE(inst)) {
-  case OPCODE_LUI:    return GET_IMM(U, inst);
-  case OPCODE_AUIPC:  return GET_IMM(U, inst);
-  case OPCODE_JAL:    return GET_IMM(J, inst);
-  case OPCODE_JALR:   return GET_IMM(I, inst);
-  case OPCODE_BRANCH: return GET_IMM(B, inst);
-  case OPCODE_LOAD:   return GET_IMM(I, inst);
-  case OPCODE_STORE:  return GET_IMM(S, inst);
-  case OPCODE_OP_IMM: return GET_IMM(I, inst);
-  default:            die("\nError: line ", __LINE__, ": ", __func__,
-                          "(", to_hex(inst), "): bad opcode");
-                      return -1; // unreachable!
+  switch (get_opcode(inst)) {
+  case OPCODE_LUI:    return get_U_imm(inst);
+  case OPCODE_AUIPC:  return get_U_imm(inst);
+  case OPCODE_JAL:    return get_J_imm(inst);
+  case OPCODE_JALR:   return get_I_imm(inst);
+  case OPCODE_BRANCH: return get_B_imm(inst);
+  case OPCODE_LOAD:   return get_I_imm(inst);
+  case OPCODE_STORE:  return get_S_imm(inst);
+  case OPCODE_OP_IMM: return get_I_imm(inst);
+  default: die("\nError: line ", __LINE__, ": ",
+               __func__, "(", to_hex(inst), "): bad opcode");
+           return -1; // unreachable!
   }
 }
 
 Instruction decode(u32 inst) {
   auto decode_OPCODE_BRANCH = [&]{
-    switch (GET_FUNCT3(inst)) {
+    switch (get_funct3(inst)) {
     case FUNCT3_BEQ:  return BEQ;
     case FUNCT3_BNE:  return BNE;
     case FUNCT3_BLT:  return BLT;
@@ -246,7 +266,7 @@ Instruction decode(u32 inst) {
   };
 
   auto decode_OPCODE_LOAD = [&]{
-    switch (GET_FUNCT3(inst)) {
+    switch (get_funct3(inst)) {
     case FUNCT3_LB:  return LB;
     case FUNCT3_LH:  return LH;
     case FUNCT3_LW:  return LW;
@@ -257,7 +277,7 @@ Instruction decode(u32 inst) {
   };
 
   auto decode_OPCODE_STORE = [&]{
-    switch (GET_FUNCT3(inst)) {
+    switch (get_funct3(inst)) {
     case FUNCT3_SB: return SB;
     case FUNCT3_SH: return SH;
     case FUNCT3_SW: return SW;
@@ -266,7 +286,7 @@ Instruction decode(u32 inst) {
   };
 
   auto decode_OPCODE_OP_IMM = [&]{
-    switch (GET_FUNCT3(inst)) {
+    switch (get_funct3(inst)) {
     case FUNCT3_ADDI:   return ADDI;
     case FUNCT3_SLTI:   return SLTI;
     case FUNCT3_SLTIU:  return SLTIU;
@@ -275,7 +295,7 @@ Instruction decode(u32 inst) {
     case FUNCT3_ANDI:   return ANDI;
     case FUNCT3_SLLI:   return SLLI;
     case FUNCT3_SRAI_SRLI:
-      switch (GET_FUNCT7(inst)) {
+      switch (get_funct7(inst)) {
       case FUNCT7_SRAI: return SRAI;
       case FUNCT7_SRLI: return SRLI;
       default:          return UNDEF;
@@ -285,9 +305,9 @@ Instruction decode(u32 inst) {
   };
 
   auto decode_OPCODE_OP = [&]{
-    switch (GET_FUNCT3(inst)) {
+    switch (get_funct3(inst)) {
     case FUNCT3_SUB_ADD:
-      switch (GET_FUNCT7(inst)) {
+      switch (get_funct7(inst)) {
       case FUNCT7_SUB: return SUB;
       case FUNCT7_ADD: return ADD;
       default:         return UNDEF;
@@ -297,7 +317,7 @@ Instruction decode(u32 inst) {
     case FUNCT3_SLTU:  return SLTU;
     case FUNCT3_XOR:   return XOR;
     case FUNCT3_SRA_SRL:
-      switch (GET_FUNCT7(inst)) {
+      switch (get_funct7(inst)) {
       case FUNCT7_SRA: return SRA;
       case FUNCT7_SRL: return SRL;
       default:         return UNDEF;
@@ -308,7 +328,7 @@ Instruction decode(u32 inst) {
     }
   };
 
-  switch (GET_OPCODE(inst)) {
+  switch (get_opcode(inst)) {
   case OPCODE_LUI:    return LUI;
   case OPCODE_AUIPC:  return AUIPC;
   case OPCODE_JAL:    return JAL;
@@ -342,13 +362,13 @@ auto disasm(auto inst) {
     "add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and",
     "ebreak", "undef"
   };
-  const auto opcode = GET_OPCODE(inst);
+  const auto opcode = get_opcode(inst);
   static auto offset = [&]{ return is_in(opcode, OPCODE_LUI, OPCODE_AUIPC) ? OFFSET_U_IMM_0 : 0; };
   static auto imm = [&]{ return get_imm(inst) >> offset(); };
-  static auto rd  = [&]{ return str(std::setw(3), std::left, regnames[GET_RD(inst)]);  };
-  static auto rs1 = [&]{ return str(std::setw(3), std::left, regnames[GET_RS1(inst)]); };
-  static auto rs2 = [&]{ return str(std::setw(3), std::left, regnames[GET_RS2(inst)]); };
-  static auto addr = [&]{ return str(imm(), "(", regnames[GET_RS1(inst)], ")"); };
+  static auto rd  = [&]{ return str(std::setw(3), std::left, regnames[get_rd(inst)]);  };
+  static auto rs1 = [&]{ return str(std::setw(3), std::left, regnames[get_rs1(inst)]); };
+  static auto rs2 = [&]{ return str(std::setw(3), std::left, regnames[get_rs2(inst)]); };
+  static auto addr = [&]{ return str(imm(), "(", regnames[get_rs1(inst)], ")"); };
   static auto verb = [&]{ return str(std::setw(6), std::left, inst_names[decode(inst)]); };
   static auto dis = [&](auto... args) { return str(verb(), args...); };
 
@@ -440,10 +460,10 @@ struct CPU {
   }
 
   auto exec(u32 inst) {
-    static auto rd = [&] -> auto& { auto rd = GET_RD(inst); return rd ? regs[rd] : regs[32]; };
+    static auto rd = [&] -> auto& { auto rd = get_rd(inst); return rd ? regs[rd] : regs[32]; };
     static auto inc_pc = [&]{ pc += 4; };
-    static auto rs1 = [&]{ return regs[GET_RS1(inst)]; };
-    static auto rs2 = [&]{ return regs[GET_RS2(inst)]; };
+    static auto rs1 = [&]{ return regs[get_rs1(inst)]; };
+    static auto rs2 = [&]{ return regs[get_rs2(inst)]; };
     static auto imm = [&]{ return get_imm(inst); };
     static auto ishamt = [&]{ return imm() & 0x1f; };
     static auto rshamt = [&]{ return rs2() & 0x1f; };
