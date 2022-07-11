@@ -196,7 +196,7 @@ enum SXT_BIT : u32 {
   SXT_BIT_J_IMM = 20,
 };
 
-u32 sxt(i32 sxt_bit, i32 x) {
+i32 sxt(i32 sxt_bit, i32 x) {
   auto shamt = 31 - sxt_bit; // shift off superflous bits
   return (x << shamt) >> shamt;
 }
@@ -343,10 +343,6 @@ Instruction decode(u32 inst) {
   }
 }
 
-auto is_in(auto x, auto... args) {
-  return ((x == args) || ... );
-}
-
 auto disasm(auto inst) {
   static const auto regnames = std::array<std::string, 32> {
     "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9",
@@ -354,6 +350,7 @@ auto disasm(auto inst) {
     "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29",
     "x30", "x31"
   };
+
   static const auto inst_names = std::array<std::string, 39> {
     "lui", "auipc",
     "jal", "jalr", "beq", "bne", "blt", "bge", "bltu", "bgeu",
@@ -362,28 +359,27 @@ auto disasm(auto inst) {
     "add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and",
     "ebreak", "undef"
   };
-  const auto opcode = get_opcode(inst);
-  static auto offset = [&]{ return is_in(opcode, OPCODE_LUI, OPCODE_AUIPC) ? OFFSET_U_IMM_0 : 0; };
-  static auto imm = [&]{ return get_imm(inst) >> offset(); };
+
+  static auto imm = [&]{ return get_imm(inst); };
+  static auto uimm = [&]{ return imm() >> OFFSET_U_IMM_0; };
   static auto rd  = [&]{ return str(std::setw(3), std::left, regnames[get_rd(inst)]);  };
   static auto rs1 = [&]{ return str(std::setw(3), std::left, regnames[get_rs1(inst)]); };
   static auto rs2 = [&]{ return str(std::setw(3), std::left, regnames[get_rs2(inst)]); };
   static auto addr = [&]{ return str(imm(), "(", regnames[get_rs1(inst)], ")"); };
   static auto verb = [&]{ return str(std::setw(6), std::left, inst_names[decode(inst)]); };
-  static auto dis = [&](auto... args) { return str(verb(), args...); };
 
-  switch (opcode) {
-  case OPCODE_LUI:    return dis(rd(),  " ", imm());
-  case OPCODE_AUIPC:  return dis(rd(),  " ", imm());
-  case OPCODE_JAL:    return dis(rd(),  " ", imm());
-  case OPCODE_JALR:   return dis(rd(),  " ", rs1(), " ", imm());
-  case OPCODE_BRANCH: return dis(rs1(), " ", rs2(), " ", imm());
-  case OPCODE_LOAD:   return dis(rd(),  " ", addr());
-  case OPCODE_STORE:  return dis(rs2(), " ", addr());
-  case OPCODE_OP_IMM: return dis(rd(),  " ", rs1(), " ", imm());
-  case OPCODE_OP:     return dis(rd(),  " ", rs1(), " ", rs2());
-  case OPCODE_SYSTEM: return dis();
-  default:            return dis(to_hex(inst));
+  switch (get_opcode(inst)) {
+  case OPCODE_LUI:    return str(verb(), rd(),  " ", uimm());
+  case OPCODE_AUIPC:  return str(verb(), rd(),  " ", uimm());
+  case OPCODE_JAL:    return str(verb(), rd(),  " ", imm());
+  case OPCODE_JALR:   return str(verb(), rd(),  " ", rs1(), " ", imm());
+  case OPCODE_BRANCH: return str(verb(), rs1(), " ", rs2(), " ", imm());
+  case OPCODE_LOAD:   return str(verb(), rd(),  " ", addr());
+  case OPCODE_STORE:  return str(verb(), rs2(), " ", addr());
+  case OPCODE_OP_IMM: return str(verb(), rd(),  " ", rs1(), " ", imm());
+  case OPCODE_OP:     return str(verb(), rd(),  " ", rs1(), " ", rs2());
+  case OPCODE_SYSTEM: return str(verb());
+  default:            return str(verb(), to_hex(inst));
   }
 }
 
